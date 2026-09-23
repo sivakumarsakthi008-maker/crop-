@@ -1,0 +1,6 @@
+{
+  "name": "Smart Crop Advisor & Field Planner",
+  "description": "User-friendly agricultural crop advisor with real-time weather integration, customizable crop catalog, and field suitability analysis.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

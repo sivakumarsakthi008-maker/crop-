@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Crop Recommendation | KNN Machine Learning</title>
+  <meta name="description" content="Precision agricultural crop recommendation using K-Nearest Neighbors (KNN) ML algorithm.">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen antialiased flex flex-col selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- Navigation / Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-sm shadow-emerald-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 tracking-tight leading-none flex items-center gap-2">
+            Smart Crop Recommendation
+            <span class="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80">KNN Engine</span>
+          </h1>
+          <p class="text-xs text-slate-500 mt-0.5">K-Nearest Neighbors Agronomic Classifier</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs font-medium text-slate-600">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Model: Distance-Weighted Euclidean
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- Intro Banner -->
+    <div class="mb-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Precision Soil & Climate Intelligence</h2>
+        <p class="text-sm text-slate-600 mt-1 max-w-2xl">
+          Enter your soil nutrient ratios (N-P-K) and localized environmental parameters. Our calibrated K-Nearest Neighbors model analyzes proximity across multi-dimensional feature space to identify the highest-yielding crop.
+        </p>
+      </div>
+
+      <!-- Quick Presets -->
+      <div class="flex flex-col gap-1.5 flex-shrink-0">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Climate Presets</span>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="applyPreset('paddy')" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition">
+            🌾 Monsoon / Paddy
+          </button>
+          <button type="button" onclick="applyPreset('arid')" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition">
+            ☀️ Arid / Dryland
+          </button>
+          <button type="button" onclick="applyPreset('temperate')" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-sky-50 text-sky-800 hover:bg-sky-100 border border-sky-200 transition">
+            🍎 Temperate / Hill
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-Column Grid: Form & Results -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Parameter Input Form -->
+      <div class="lg:col-span-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <form id="predictionForm" onsubmit="handlePrediction(event)">
+          
+          <!-- Group 1: Soil Nutrients -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+              <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                1. Soil Nutrients (NPK Ratios)
+              </h3>
+              <span class="text-xs text-slate-400 font-mono">mg / kg</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- Nitrogen -->
+              <div>
+                <label for="inputN" class="block text-xs font-semibold text-slate-700 mb-1">
+                  Nitrogen (N)
+                </label>
+                <div class="relative rounded-lg shadow-sm">
+                  <input type="number" id="inputN" name="N" min="0" max="140" step="1" required
+                    class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                    placeholder="0 - 140" value="90">
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Min: 0</span>
+                  <span>Max: 140</span>
+                </div>
+              </div>
+
+              <!-- Phosphorus -->
+              <div>
+                <label for="inputP" class="block text-xs font-semibold text-slate-700 mb-1">
+                  Phosphorus (P)
+                </label>
+                <div class="relative rounded-lg shadow-sm">
+                  <input type="number" id="inputP" name="P" min="5" max="145" step="1" required
+                    class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                    placeholder="5 - 145" value="45">
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Min: 5</span>
+                  <span>Max: 145</span>
+                </div>
+              </div>
+
+              <!-- Potassium -->
+              <div>
+                <label for="inputK" class="block text-xs font-semibold text-slate-700 mb-1">
+                  Potassium (K)
+                </label>
+                <div class="relative rounded-lg shadow-sm">
+                  <input type="number" id="inputK" name="K" min="5" max="205" step="1" required
+                    class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                    placeholder="5 - 205" value="40">
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Min: 5</span>
+                  <span>Max: 205</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Group 2: Climate & Soil Conditions -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+              <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                2. Climatic & Environmental Parameters
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Temperature -->
+              <div>
+                <label for="inputTemp" class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Temperature</span>
+                  <span class="text-slate-400 font-mono">°C</span>
+                </label>
+                <input type="number" id="inputTemp" name="temperature" min="8.0" max="45.0" step="0.1" required
+                  class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                  placeholder="8.0 - 45.0" value="24.0">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Range: 8.0 to 45.0 °C</span>
+                </div>
+              </div>
+
+              <!-- Humidity -->
+              <div>
+                <label for="inputHumidity" class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Relative Humidity</span>
+                  <span class="text-slate-400 font-mono">%</span>
+                </label>
+                <input type="number" id="inputHumidity" name="humidity" min="10.0" max="100.0" step="0.1" required
+                  class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                  placeholder="10.0 - 100.0" value="82.0">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Range: 10.0 to 100.0 %</span>
+                </div>
+              </div>
+
+              <!-- pH -->
+              <div>
+                <label for="inputPH" class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Soil pH Level</span>
+                  <span class="text-slate-400 font-mono">0-14 scale</span>
+                </label>
+                <input type="number" id="inputPH" name="ph" min="3.5" max="9.5" step="0.1" required
+                  class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                  placeholder="3.5 - 9.5" value="6.5">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Range: 3.5 to 9.5</span>
+                </div>
+              </div>
+
+              <!-- Rainfall -->
+              <div>
+                <label for="inputRainfall" class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Rainfall / Precipitation</span>
+                  <span class="text-slate-400 font-mono">mm</span>
+                </label>
+                <input type="number" id="inputRainfall" name="rainfall" min="20.0" max="300.0" step="0.1" required
+                  class="block w-full rounded-lg border-slate-300 bg-slate-50/50 p-2.5 text-sm text-slate-900 border focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono transition"
+                  placeholder="20.0 - 300.0" value="240.0">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <span>Range: 20.0 to 300.0 mm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Alert Banner -->
+          <div id="errorBox" class="hidden mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            <div class="font-bold flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              Input Error
+            </div>
+            <div id="errorMessage" class="mt-1"></div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="predictBtn"
+            class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition duration-150">
+            <span id="btnText">Predict Optimal Crop</span>
+            <svg id="btnSpinner" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- RIGHT COLUMN: Recommendation Output -->
+      <div class="lg:col-span-6">
+        
+        <!-- State 1: Default Empty State -->
+        <div id="emptyState" class="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center shadow-sm">
+          <div class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-emerald-600/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">Awaiting Soil & Climate Inputs</h3>
+          <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+            Fill in the parameters on the left or select a Quick Preset, then tap <strong>Predict Optimal Crop</strong> to calculate neighbor proximity scores.
+          </p>
+          <div class="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <span>KNN Distance Weights</span>
+            <span>•</span>
+            <span>StandardScaler Normalized</span>
+            <span>•</span>
+            <span>14+ Crops</span>
+          </div>
+        </div>
+
+        <!-- State 2: Active Results Card -->
+        <div id="resultState" class="hidden space-y-6">
+          
+          <!-- Hero Crop Card -->
+          <div class="bg-white border-2 border-emerald-500/80 rounded-2xl p-6 shadow-lg shadow-emerald-500/5 relative overflow-hidden">
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-50 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                  Top Recommendation
+                </span>
+                <h2 id="resCropName" class="text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">Rice</h2>
+                <p id="resCropCategory" class="text-sm text-slate-500 mt-1">Cereal & Staple Grain Crop</p>
+              </div>
+
+              <!-- Confidence Score Badge -->
+              <div class="text-right">
+                <span class="text-xs text-slate-400 uppercase tracking-wider block font-semibold">KNN Confidence</span>
+                <span id="resConfidence" class="text-3xl font-black text-emerald-600 font-mono">92.5%</span>
+              </div>
+            </div>
+
+            <!-- Match Meter Progress Bar -->
+            <div class="mt-5">
+              <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5">
+                <span>Algorithmic Proximity Fit</span>
+                <span id="resConfidenceBarLabel">92.5%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div id="resConfidenceBar" class="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-700 ease-out" style="width: 92.5%;"></div>
+              </div>
+            </div>
+
+            <!-- Agronomic Profile Note -->
+            <div id="resAgronomyNote" class="mt-5 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 leading-relaxed">
+              Rice thrives in standing water with high relative humidity and warm temperatures. Nitrogen requirements are substantial during tillering.
+            </div>
+          </div>
+
+          <!-- Top Alternatives Breakdown -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center justify-between">
+              <span>Top Neighbor Alternatives</span>
+              <span class="text-xs text-slate-400 normal-case font-normal">K-Nearest Distribution</span>
+            </h4>
+            
+            <div id="alternativesList" class="space-y-3">
+              <!-- Dynamically generated items -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Educational Technical Footer -->
+    <div class="mt-12 pt-8 border-t border-slate-200">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-500">
+        <div>
+          <span class="font-bold text-slate-700 block mb-1">K-Nearest Neighbors (KNN)</span>
+          Instance-based learning calculates Euclidean distance across 7 normalized dimensions, weighting votes inversely to distance.
+        </div>
+        <div>
+          <span class="font-bold text-slate-700 block mb-1">StandardScaler Normalization</span>
+          Prevents high-magnitude variables (like Rainfall up to 300mm or K up to 205) from dominating low-magnitude parameters (like pH 3.5-9.5).
+        </div>
+        <div>
+          <span class="font-bold text-slate-700 block mb-1">Production REST API</span>
+          Exposes <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700">POST /api/predict</code> with strict input sanitization and JSON response payloads.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Climate and Soil Presets
+    const PRESETS = {
+      paddy: { N: 90, P: 45, K: 40, temperature: 24.0, humidity: 82.0, ph: 6.5, rainfall: 240.0 },
+      arid: { N: 40, P: 68, K: 80, temperature: 19.0, humidity: 17.0, ph: 7.3, rainfall: 80.0 },
+      temperate: { N: 25, P: 135, K: 200, temperature: 22.0, humidity: 92.0, ph: 6.0, rainfall: 115.0 }
+    };
+
+    const CROP_CATEGORIES = {
+      "Rice": "Cereal & Staple Grain Crop",
+      "Maize": "High-yield Cereal & Forage Crop",
+      "Chickpea": "Arid Nitrogen-Fixing Legume",
+      "Kidney Beans": "Nutritious Pulse Crop",
+      "Pigeonpeas": "Drought-Tolerant Grain Legume",
+      "Cotton": "Industrial Fiber Cash Crop",
+      "Coffee": "Highland Plantation Crop",
+      "Jute": "Natural Fiber & Golden Crop",
+      "Coconut": "Tropical Coastal Palm Crop",
+      "Papaya": "Tropical Vitamin-Rich Fruit",
+      "Orange": "Subtropical Citrus Fruit",
+      "Apple": "Temperate Orchard Deciduous Fruit",
+      "Watermelon": "Warm-Season Vine Fruit",
+      "Muskmelon": "Warm Arid Sweet Melon"
+    };
+
+    const CROP_NOTES = {
+      "Rice": "Requires heavy alluvial or clayey loam with substantial irrigation or standing monsoon water. Strong vegetative response to Nitrogen.",
+      "Maize": "Prefers well-drained fertile loam soils with moderate rainfall and warm sunshine throughout pollination.",
+      "Chickpea": "Thrives in dry, low-humidity environments with neutral to slightly alkaline soil and minimal rainfall.",
+      "Kidney Beans": "Requires loose, well-draining soil with consistent mild temperatures and moderate moisture.",
+      "Pigeonpeas": "Deep-rooting legume that tolerates warm temperatures, providing natural soil nitrogen replenishment.",
+      "Cotton": "Needs deep, moisture-retentive black soil with high sunshine hours and moderate precipitation.",
+      "Coffee": "Flourishes in rich, porous volcanic soils at moderate altitudes with shaded canopy conditions.",
+      "Jute": "Demands warm, humid monsoon conditions with abundant rainfall and fertile riverine silt.",
+      "Coconut": "Best suited for sandy or coastal loam soils with high ambient humidity and steady sunshine.",
+      "Papaya": "Fast-growing tropical crop demanding warm weather, excellent soil drainage, and protection from frost.",
+      "Orange": "Prefers well-drained, sandy-loam soils with mild winter dormancy and warm ripening seasons.",
+      "Apple": "Demands high chilling hours during winter, rich potassium/phosphorus soils, and cool temperate summers.",
+      "Watermelon": "Requires sandy-loam soils with high temperature, low humidity, and controlled irrigation during fruit swell.",
+      "Muskmelon": "Grows best in warm climates with sandy soils, requiring intense sunlight and dry harvest periods."
+    };
+
+    function applyPreset(presetKey) {
+      const data = PRESETS[presetKey];
+      if (!data) return;
+
+      document.getElementById('inputN').value = data.N;
+      document.getElementById('inputP').value = data.P;
+      document.getElementById('inputK').value = data.K;
+      document.getElementById('inputTemp').value = data.temperature;
+      document.getElementById('inputHumidity').value = data.humidity;
+      document.getElementById('inputPH').value = data.ph;
+      document.getElementById('inputRainfall').value = data.rainfall;
+
+      // Auto trigger prediction on preset click
+      handlePrediction();
+    }
+
+    async function handlePrediction(e) {
+      if (e) e.preventDefault();
+
+      const errorBox = document.getElementById('errorBox');
+      const errorMessage = document.getElementById('errorMessage');
+      errorBox.classList.add('hidden');
+      errorMessage.innerHTML = '';
+
+      const payload = {
+        N: parseFloat(document.getElementById('inputN').value),
+        P: parseFloat(document.getElementById('inputP').value),
+        K: parseFloat(document.getElementById('inputK').value),
+        temperature: parseFloat(document.getElementById('inputTemp').value),
+        humidity: parseFloat(document.getElementById('inputHumidity').value),
+        ph: parseFloat(document.getElementById('inputPH').value),
+        rainfall: parseFloat(document.getElementById('inputRainfall').value)
+      };
+
+      // Button loading state
+      const btn = document.getElementById('predictBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+      btn.disabled = true;
+      btnText.innerText = 'Calculating Distance Fit...';
+      btnSpinner.classList.remove('hidden');
+
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          const errMsg = result.details ? result.details.join('<br>') : (result.error || 'Prediction request failed.');
+          errorMessage.innerHTML = errMsg;
+          errorBox.classList.remove('hidden');
+          return;
+        }
+
+        renderResults(result);
+
+      } catch (err) {
+        console.error('Fetch error:', err);
+        errorMessage.innerText = 'Unable to connect to the prediction backend server. Please ensure app.py is running on port 5000.';
+        errorBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btnText.innerText = 'Predict Optimal Crop';
+        btnSpinner.classList.add('hidden');
+      }
+    }
+
+    function renderResults(data) {
+      document.getElementById('emptyState').classList.add('hidden');
+      const resultState = document.getElementById('resultState');
+      resultState.classList.remove('hidden');
+
+      const crop = data.recommended_crop;
+      const conf = data.confidence.toFixed(1);
+
+      document.getElementById('resCropName').innerText = crop;
+      document.getElementById('resCropCategory').innerText = CROP_CATEGORIES[crop] || 'Agricultural Crop';
+      document.getElementById('resConfidence').innerText = conf + '%';
+      document.getElementById('resConfidenceBarLabel').innerText = conf + '% Match';
+      document.getElementById('resConfidenceBar').style.width = Math.min(100, Math.max(10, conf)) + '%';
+      
+      document.getElementById('resAgronomyNote').innerText = CROP_NOTES[crop] || 'Optimal for provided soil nutrient ratios and localized climate profile.';
+
+      // Render top alternatives
+      const alternativesList = document.getElementById('alternativesList');
+      alternativesList.innerHTML = '';
+
+      if (data.top_alternatives && data.top_alternatives.length > 0) {
+        data.top_alternatives.forEach((alt, idx) => {
+          const isTop = idx === 0;
+          const altDiv = document.createElement('div');
+          altDiv.className = `p-3 rounded-xl border flex items-center justify-between ${
+            isTop ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-50 border-slate-100'
+          }`;
+          
+          altDiv.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                isTop ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+              }">${idx + 1}</span>
+              <div>
+                <span class="text-sm font-bold text-slate-800">${alt.crop}</span>
+                <span class="text-[11px] text-slate-400 block">${CROP_CATEGORIES[alt.crop] || ''}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-sm font-mono font-bold ${isTop ? 'text-emerald-700' : 'text-slate-600'}">${alt.confidence.toFixed(1)}%</span>
+              <span class="text-[10px] text-slate-400 block">Proximity weight</span>
+            </div>
+          `;
+          alternativesList.appendChild(altDiv);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
